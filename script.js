@@ -1,41 +1,43 @@
-// Enhanced recruitment data with more details
-const recruitmentData = [
-    {
-        name: "John Doe",
-        phone: "1234567890",
-        domains: ["Software", "Robotics"],
-        email: "john.doe@example.com",
-        applicationId: "SAE2025001"
-    },
-    {
-        name: "Jane Smith",
-        phone: "9876543210",
-        domains: ["Motorsports"],
-        email: "jane.smith@example.com",
-        applicationId: "SAE2025002"
-    },
-    {
-        name: "Alice Johnson",
-        phone: "5556667777",
-        domains: ["Aerospace", "Software"],
-        email: "alice.johnson@example.com",
-        applicationId: "SAE2025003"
-    },
-    {
-        name: "Bob Brown",
-        phone: "1112223333",
-        domains: [],
-        email: "bob.brown@example.com",
-        applicationId: "SAE2025004"
-    },
-    {
-        name: "Charlie Wilson",
-        phone: "4445556666",
-        domains: ["Robotics", "Aerospace"],
-        email: "charlie.wilson@example.com",
-        applicationId: "SAE2025005"
-    }
-];
+// // Enhanced recruitment data with more details
+// const recruitmentData = [
+//     {
+//         name: "John Doe",
+//         phone: "1234567890",
+//         domains: ["Software", "Robotics"],
+//         email: "john.doe@example.com",
+//         applicationId: "SAE2025001"
+//     },
+//     {
+//         name: "Jane Smith",
+//         phone: "9876543210",
+//         domains: ["Motorsports"],
+//         email: "jane.smith@example.com",
+//         applicationId: "SAE2025002"
+//     },
+//     {
+//         name: "Alice Johnson",
+//         phone: "5556667777",
+//         domains: ["Aerospace", "Software"],
+//         email: "alice.johnson@example.com",
+//         applicationId: "SAE2025003"
+//     },
+//     {
+//         name: "Bob Brown",
+//         phone: "1112223333",
+//         domains: [],
+//         email: "bob.brown@example.com",
+//         applicationId: "SAE2025004"
+//     },
+//     {
+//         name: "Charlie Wilson",
+//         phone: "4445556666",
+//         domains: ["Robotics", "Aerospace"],
+//         email: "charlie.wilson@example.com",
+//         applicationId: "SAE2025005"
+//     }
+// ];
+
+// import { response } from "express";
 
 // DOM Elements
 const searchForm = document.getElementById('searchForm');
@@ -139,13 +141,16 @@ function animateValue(element, start, end, duration) {
         if (!startTimestamp) startTimestamp = timestamp;
         const progress = Math.min((timestamp - startTimestamp) / duration, 1);
         const value = Math.floor(progress * (end - start) + start);
-        element.textContent = value.toLocaleString();
+        // Append "+" if value reached and target is one of those with plus sign
+        const plusTargets = [250, 80];
+        element.textContent = value.toLocaleString() + (value === end && plusTargets.includes(end) ? '+' : '');
         if (progress < 1) {
             window.requestAnimationFrame(step);
         }
     };
     window.requestAnimationFrame(step);
 }
+
 
 // Domain cards interaction
 function initializeDomainCards() {
@@ -249,11 +254,6 @@ searchForm.addEventListener('submit', function(e) {
     const name = document.getElementById('name').value.trim();
     const phone = document.getElementById('phone').value.trim();
     
-    if (!name || !phone) {
-        showNotification('Please enter both name and phone number', 'error');
-        return;
-    }
-    
     checkSelection(name, phone);
 });
 
@@ -275,21 +275,37 @@ function checkSelection(name, phone) {
         createLoadingParticles(loadingParticles);
     }
 
-    // Simulate API call delay with realistic timing
-    setTimeout(() => {
-        // Normalize inputs for comparison
-        const normalizedName = name.toLowerCase().trim();
-        const normalizedPhone = phone.trim();
-        
-        // Find student in data
-        const student = recruitmentData.find(s => 
-            s.name.toLowerCase() === normalizedName && 
-            s.phone === normalizedPhone
-        );
-        
-        // Display result with animation
-        displayResult(student, name);
-        
+    fetch('http://localhost:8000/api/sae/results', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name, phone: Number(phone) }) // phone as number
+    })
+    .then(response => response.json())
+    .then(data => {
+     
+    console.log('API response:', data);
+    // then handle as needed
+
+
+        if (data.message === 'selected') {
+            displayResult(data, name); // show selected
+        } else if (data.message === 'rejected') {
+            displayResult(data, name); // show not selected
+        } else if (data.message === 'entered Name does not match!') {
+            showNotification('Entered name does not match!', 'error');
+            displayResult(null, name);
+        } else {
+            showNotification(data.message || 'Unexpected response', 'error');
+            displayResult(null, name);
+        }
+    })
+    .catch(error => {
+        showNotification('API error: ' + error.message, 'error');
+        displayResult(null, name);
+    })
+    .finally(() => {
         // Reset button state
         setTimeout(() => {
             buttonText.textContent = 'Check Result';
@@ -300,25 +316,20 @@ function checkSelection(name, phone) {
                 loadingParticles.innerHTML = '';
             }
         }, 500);
-        
-    }, 1500 + Math.random() * 1000); // Random delay between 1.5-2.5 seconds
-}
+    }); 
+    }
 
 // Enhanced result display with animations
-function displayResult(student, originalName) {
+function displayResult(apiResponse, originalName) {
     resultsSection.classList.remove('hidden');
-    
-    // Add entrance animation
     resultsSection.classList.add('animate__fadeInUp');
-    
-    // Remove previous animations
     setTimeout(() => {
         resultsSection.classList.remove('animate__fadeInUp');
     }, 1000);
 
-    if (student && student.domains.length > 0) {
-        // Student is selected - CELEBRATION! 🎉
-        resultTitle.textContent = `Congratulations ${originalName}!`;
+    if (apiResponse && apiResponse.message === "selected") {
+        const displayName = apiResponse.name || originalName;
+        resultTitle.textContent = `Congratulations ${displayName}!`;
         resultContent.innerHTML = `
             <div class="selection-status">
                 <div class="selected">
@@ -326,29 +337,18 @@ function displayResult(student, originalName) {
                         <div class="confetti-icon">🎉</div>
                         <h4>You have been selected! 🎉</h4>
                     </div>
-                    <p>Welcome to the SAE UIET family! You have been selected in the following domain(s):</p>
-                    <div class="domains-list">
-                        ${student.domains.map(domain => 
-                            `<span class="domain-badge">${domain}</span>`
-                        ).join('')}
-                    </div>
-                    <div class="selection-details">
-                        <p><strong>Application ID:</strong> ${student.applicationId}</p>
-                        <p><strong>Email:</strong> ${student.email}</p>
-                    </div>
+                    <p>Welcome to the SAE UIET family!</p>
+                    <br><br>
                     <p class="next-steps">
                         🚀 <strong>Next Steps:</strong> Further instructions will be communicated via email and WhatsApp group.
                     </p>
                 </div>
             </div>
         `;
-        
-        // Trigger celebrations
         triggerCelebration();
-        
-    } else {
-        // Student not selected or not found
-        resultTitle.textContent = `Selection Status for ${originalName}`;
+    } if(apiResponse && apiResponse.message === "rejected") {
+        const displayName = originalName || (apiResponse && apiResponse.name) || '';
+        resultTitle.textContent = `Selection Status for ${displayName}`;
         resultContent.innerHTML = `
             <div class="selection-status">
                 <div class="not-selected">
@@ -373,13 +373,14 @@ function displayResult(student, originalName) {
                 </div>
             </div>
         `;
+    }else{
+        resultContent.innerHTML =`<div class="selection-status">error:entered name does not match with the registered name, corresponding to entered phone no.</div>`
     }
-    
-    // Scroll to results with smooth animation
+
     setTimeout(() => {
-        resultsSection.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
+        resultsSection.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
         });
     }, 300);
 }
