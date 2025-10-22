@@ -1,0 +1,36 @@
+{
+  "students": [
+    {
+      "id": 1,
+      "name": "John Doe",
+      "phone": "1234567890",
+      "email": "john@example.com",
+      "domains": ["Software", "Robotics"],
+      "timestamp": "2025-01-20T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "name": "Jane Smith",
+      "phone": "9876543210",
+      "email": "jane@example.com",
+      "domains": ["Motorsports"],
+      "timestamp": "2025-01-20T10:00:00Z"
+    },
+    {
+      "id": 3,
+      "name": "Alice Johnson",
+      "phone": "5556667777",
+      "email": "alice@example.com",
+      "domains": ["Aerospace", "Software"],
+      "timestamp": "2025-01-20T10:00:00Z"
+    },
+    {
+      "id": 4,
+      "name": "Bob Brown",
+      "phone": "1112223333",
+      "email": "bob@example.com",
+      "domains": [],
+      "timestamp": "2025-01-20T10:00:00Z"
+    }
+  ]
+}
