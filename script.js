@@ -346,7 +346,7 @@ function displayResult(apiResponse, originalName) {
             </div>
         `;
         triggerCelebration();
-    } if(apiResponse && apiResponse.message === "rejected") {
+    } else if(apiResponse && apiResponse.message === "rejected") {
         const displayName = originalName || (apiResponse && apiResponse.name) || '';
         resultTitle.textContent = `Selection Status for ${displayName}`;
         resultContent.innerHTML = `
@@ -374,6 +374,8 @@ function displayResult(apiResponse, originalName) {
             </div>
         `;
     }else{
+        // console.log('Stored name:', storedName, 'Entered name:', enteredName);
+
         resultContent.innerHTML =`<div class="selection-status">error:entered name does not match with the registered name, corresponding to entered phone no.</div>`
     }
 
